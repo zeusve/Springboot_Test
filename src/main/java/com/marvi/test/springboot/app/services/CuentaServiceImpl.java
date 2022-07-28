@@ -4,9 +4,12 @@ import com.marvi.test.springboot.app.models.Banco;
 import com.marvi.test.springboot.app.models.Cuenta;
 import com.marvi.test.springboot.app.repositories.BancoRepository;
 import com.marvi.test.springboot.app.repositories.CuentaRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 
+@Service
 public class CuentaServiceImpl implements CuentaService {
     private CuentaRepository cuentaRepository;
     private BancoRepository bancoRepository;
@@ -17,35 +20,39 @@ public class CuentaServiceImpl implements CuentaService {
     }
 
     @Override
-    public Cuenta findById(Long id) {
-        return cuentaRepository.findById(id);
-    }
+    @Transactional(readOnly = true)
+    public Cuenta findById(Long id) { return cuentaRepository.findById(id).orElseThrow();}
+
 
     @Override
+    @Transactional(readOnly = true)
     public int revisarTotalTransferencias(Long bancoId) {
-        Banco banco = bancoRepository.findById(bancoId);
+        Banco banco = bancoRepository.findById(bancoId).orElseThrow();
         return banco.getTotalTransferencias();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public BigDecimal revisarSaldo(Long cuentaId) {
-        Cuenta cuenta = cuentaRepository.findById(cuentaId);
+        Cuenta cuenta = cuentaRepository.findById(cuentaId).orElseThrow();
         return cuenta.getSaldo();
     }
 
     @Override
-    public void transferir(Long numCuentaOrigen, Long numCuentaDestino, BigDecimal saldo) {
-        Banco banco = bancoRepository.findById(1L);
+    @Transactional
+    public void transferir(Long numCuentaOrigen, Long numCuentaDestino, BigDecimal saldo, Long bancoId) {
+
+        Cuenta cuentaOrigen = cuentaRepository.findById(numCuentaOrigen).orElseThrow();
+        cuentaOrigen.debito(saldo);
+        cuentaRepository.save(cuentaOrigen);
+
+        Cuenta cuentaDestino = cuentaRepository.findById(numCuentaDestino).orElseThrow();
+        cuentaDestino.credito(saldo);
+        cuentaRepository.save(cuentaDestino);
+
+        Banco banco = bancoRepository.findById(bancoId).orElseThrow();
         int totalTransferencias = banco.getTotalTransferencias();
         banco.setTotalTransferencias(++totalTransferencias);
-        bancoRepository.update(banco);
-
-        Cuenta cuentaOrigen = cuentaRepository.findById(numCuentaOrigen);
-        cuentaOrigen.debito(saldo);
-        cuentaRepository.update(cuentaOrigen);
-
-        Cuenta cuentaDestino = cuentaRepository.findById(numCuentaDestino);
-        cuentaDestino.credito(saldo);
-        cuentaRepository.update(cuentaDestino);
+        bancoRepository.save(banco);
     }
 }

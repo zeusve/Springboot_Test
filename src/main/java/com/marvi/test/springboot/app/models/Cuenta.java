@@ -3,6 +3,7 @@ package com.marvi.test.springboot.app.models;
 import com.marvi.test.springboot.app.exceptions.DineroInsuficienteException;
 import lombok.*;
 
+import javax.persistence.*;
 import java.math.BigDecimal;
 
 @AllArgsConstructor
@@ -11,8 +12,13 @@ import java.math.BigDecimal;
 @Getter
 @EqualsAndHashCode
 
+@Entity
+@Table(name="cuentas")
 public class Cuenta {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String persona;
     private BigDecimal saldo;
 
